@@ -85,19 +85,10 @@ const keys = {};
 document.addEventListener("keydown", e=>keys[e.key]=true);
 document.addEventListener("keyup", e=>keys[e.key]=false);
 
-// 터치 이동 (모바일 대응)
-canvas.addEventListener("touchmove", e => {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const touchX = (e.touches[0].clientX - rect.left) * scaleX;
-  player.x = Math.min(Math.max(touchX - player.width/2, 0), canvas.width - player.width);
-  e.preventDefault();
-}, { passive: false });
-
 // 이름 입력 위치 고정
 function updateNameInputPosition() {
-  const nameX = (canvas.height - 400)/2 + 100;
-  const nameY = (canvas.height - 230)/2 + 54;
+  const nameX = (canvas.width - 325.6)/2;
+  const nameY = (canvas.height - 69)/2;
   const scaleX = newWidth / canvas.width;
   const scaleY = newHeight / canvas.height;
   nameInput.style.left = (nameX * scaleX) + "px";
@@ -110,17 +101,22 @@ function updateNameInputPosition() {
 // ass 버튼 X 고정
 const assX = (canvas.width - 70)/2;
 
-const titleW=450, titleH=350;
-const titleX=(canvas.width-titleW)/2;
-const titleY=300;
+// 터치 이동 (모바일 호환)
+function movePlayerByTouch(touchX) {
+  player.x = Math.min(Math.max(touchX - player.width/2,0), canvas.width - player.width);
+}
+canvas.addEventListener("touchmove", e=>{
+  const rect = canvas.getBoundingClientRect();
+  const touchX = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
+  movePlayerByTouch(touchX);
+  e.preventDefault();
+}, { passive:false });
 
 // 캔버스 클릭
 canvas.addEventListener("click", e=>{
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const clickX = (e.clientX - rect.left) * scaleX;
-  const clickY = (e.clientY - rect.top) * scaleY;
+  const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
   if(gameState === "inputName" && !assClicked) {
     const assY = (canvas.height - 230)/2 + 149;
@@ -140,7 +136,7 @@ canvas.addEventListener("click", e=>{
   }
 });
 
-// 아이템 생성
+// 아이템 생성 및 처리
 function spawnItem() {
   const x = Math.random()*(canvas.width-48);
   items.push({ x, y:-114, width:48, height:114, speed:fallSpeed });
@@ -158,8 +154,10 @@ function updateAndDrawItems() {
     if(item.y>canvas.height){ items.splice(i,1); lives--; if(lives<=0) { saveScore(nameInput.value, score); gameState="end"; } }
   }
 }
-function updatePlayer() { if(keys["ArrowLeft"] && player.x>0) player.x -= player.speed;
-  if(keys["ArrowRight"] && player.x<canvas.width-player.width) player.x += player.speed; }
+function updatePlayer() {
+  if(keys["ArrowLeft"] || keys["a"]) player.x = Math.max(player.x - player.speed, 0);
+  if(keys["ArrowRight"] || keys["d"]) player.x = Math.min(player.x + player.speed, canvas.width-player.width);
+}
 function drawHUD() {
   ctx.drawImage(scoreImg,0,0,200,50);
   ctx.fillStyle="white"; ctx.font="28px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -179,12 +177,11 @@ function saveScore(name, score){
 function drawTop() {
   const topW = 500, topH = 700;
   const topX = (canvas.width - topW) / 2;
-  const finalY = 100, finalH = 200;
-  const topY = finalY + finalH + 20;
+  const topY = 100 + 200 + 20;
   ctx.drawImage(topImg, topX, topY, topW, topH);
 
   let playersList = JSON.parse(localStorage.getItem("playersList")) || [];
-  playersList.sort((a,b) => b.score - a.score);
+  playersList.sort((a,b)=>b.score-a.score);
 
   ctx.fillStyle = "white";
   ctx.font = "36px Arial";
@@ -195,11 +192,14 @@ function drawTop() {
   for(let i=0;i<maxRank;i++){
     const player = playersList[i];
     const rankY = topY + 120 + i*60;
-    const text = `${i+1}. ${player.name} - ${player.score}`;
-    const centerX = topX + topW/2;
-    ctx.fillText(text, centerX, rankY);
+    ctx.fillText(`${i+1}. ${player.name} - ${player.score}`, topX + topW/2, rankY);
   }
 }
+
+// 타이틀 위치
+const titleW=450, titleH=350;
+const titleX=(canvas.width-titleW)/2;
+const titleY=300;
 
 // 게임 루프
 function gameLoop(timestamp){
@@ -207,6 +207,7 @@ function gameLoop(timestamp){
 
   if(gameState==="inputName") {
     ctx.drawImage(startBg,0,0,canvas.width,canvas.height);
+    if(assClicked) ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
 
     if(!assClicked){
       const nameImgX=(canvas.width-400)/2;
@@ -215,9 +216,9 @@ function gameLoop(timestamp){
       const assY = (canvas.height-230)/2 + 149;
       ctx.drawImage(assImg, assX, assY, 70,50);
       nameInput.style.display = "block";
-    } else {
-      // ass 클릭 후 title과 start 버튼 표시
-      ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
+    }
+
+    if(assClicked){
       const btnX=(canvas.width-509)/2;
       const btnY=titleY + 450;
       ctx.drawImage(startBtn, btnX, btnY, 509, 207);
