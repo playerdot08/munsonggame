@@ -25,7 +25,7 @@
     outline: none;
     background: transparent;
     color: white;
-    display: none;
+    display: block;
   }
 </style>
 </head>
@@ -124,29 +124,25 @@ canvas.addEventListener("click", e=>{
     if(x >= assX && x <= assX + 70 && y >= assY && y <= assY + 50) {
       if(nameInput.value.trim() !== "") {
         assClicked = true;
-        nameInput.style.display = "none";
+        nameInput.style.display = "none"; // ASS 클릭 시 nameInput 숨김
       }
     }
   } else if(gameState === "inputName" && assClicked) {
     const btnX = (canvas.width-509)/2;
-    const btnY = titleY + 450; // 시작버튼 Y 위치
+    const btnY = titleY + 450;
     if(x >= btnX && x <= btnX+509 && y >= btnY && y <= btnY+207){
       gameState = "playing";
       score=0; lives=3; items=[];
       lastSpawn=0; lastSpawnIntervalDecrease=0; fallSpeed=5.5;
     }
   } else if(gameState === "end") {
-    ctx.drawImage(endBg,0,0,canvas.width,canvas.height);
-
     const finalW=420, finalH=200;
     const finalX=(canvas.width-finalW)/2;
     const finalY=100;
+    ctx.drawImage(endBg,0,0,canvas.width,canvas.height);
     ctx.drawImage(finalScoreImg,finalX,finalY,finalW,finalH);
-
-
-    drawTop(); // ← 이 위치에서 top 이미지와 랭킹 표시
-}
-
+    drawTop();
+  }
 });
 
 // 아이템 생성
@@ -188,28 +184,27 @@ function saveScore(name, score){
 function drawTop() {
   const topW = 500, topH = 700;
   const topX = (canvas.width - topW) / 2;
-  const finalY = 100, finalH = 200; // 최종 점수 이미지 기준
-  const topY = finalY + finalH + 20; // top 이미지 Y 위치
+  const finalY = 100, finalH = 200;
+  const topY = finalY + finalH + 20;
   ctx.drawImage(topImg, topX, topY, topW, topH);
 
   let playersList = JSON.parse(localStorage.getItem("playersList")) || [];
-  // 점수 내림차순, 동점은 저장순서 유지
   playersList.sort((a,b) => b.score - a.score);
 
   ctx.fillStyle = "white";
   ctx.font = "36px Arial";
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  for(let i=0;i<playersList.length;i++){
+  const maxRank = Math.min(5, playersList.length);
+  for(let i=0;i<maxRank;i++){
     const player = playersList[i];
     const rankY = topY + 120 + i*60;
     const text = `${i+1}. ${player.name} - ${player.score}`;
-    const textWidth = ctx.measureText(text).width; // 텍스트 너비 계산
-    const centerX = topX + topW/2;   // top 이미지 기준 x축 중앙
+    const centerX = topX + topW/2;
     ctx.fillText(text, centerX, rankY);
   }
 }
-
 
 const titleW=450, titleH=350;
 const titleX=(canvas.width-titleW)/2;
@@ -220,7 +215,6 @@ function gameLoop(timestamp){
 
   if(gameState==="inputName") {
     ctx.drawImage(startBg,0,0,canvas.width,canvas.height);
-    ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
 
     if(!assClicked){
       const nameImgX=(canvas.width-400)/2;
@@ -229,11 +223,13 @@ function gameLoop(timestamp){
       const assY = (canvas.height-230)/2 + 149;
       ctx.drawImage(assImg, assX, assY, 70,50);
       nameInput.style.display = "block";
+    } else {
+      // ASS 클릭 이후 title + start 버튼만 보이게
+      ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
+      const btnX=(canvas.width-509)/2;
+      const btnY=titleY + 450;
+      ctx.drawImage(startBtn, btnX, btnY, 509, 207);
     }
-    // start 버튼은 항상 보이지만 클릭은 ass 클릭 이후 가능
-    const btnX=(canvas.width-509)/2;
-    const btnY=titleY + 450;
-    ctx.drawImage(startBtn, btnX, btnY, 509, 207);
 
   } else if(gameState==="playing") {
     ctx.drawImage(gameBg,0,0,canvas.width,canvas.height);
