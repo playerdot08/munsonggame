@@ -87,8 +87,8 @@ document.addEventListener("keyup", e=>keys[e.key]=false);
 
 // 이름 입력 위치 고정
 function updateNameInputPosition() {
-  const nameX = (canvas.width - 400)/2;
-  const nameY = (canvas.height - 69)/2;
+  const nameX = (canvas.width - 400)/2+20;
+  const nameY = (canvas.height - 69)/2+30;
   const scaleX = newWidth / canvas.width;
   const scaleY = newHeight / canvas.height;
   nameInput.style.left = (nameX * scaleX) + "px";
@@ -251,6 +251,7 @@ requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
+
 
 
 
