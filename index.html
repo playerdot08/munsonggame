@@ -25,7 +25,7 @@
     outline: none;
     background: transparent;
     color: white;
-    display: block;
+    display: none;
   }
 </style>
 </head>
@@ -85,13 +85,14 @@ const keys = {};
 document.addEventListener("keydown", e=>keys[e.key]=true);
 document.addEventListener("keyup", e=>keys[e.key]=false);
 
-// 터치 이동
-canvas.addEventListener("touchmove", e=>{
+// 터치 이동 (모바일 대응)
+canvas.addEventListener("touchmove", e => {
   const rect = canvas.getBoundingClientRect();
-  const touchX = e.touches[0].clientX - rect.left;
-  player.x = Math.min(Math.max(touchX - player.width/2,0), canvas.width - player.width);
+  const scaleX = canvas.width / rect.width;
+  const touchX = (e.touches[0].clientX - rect.left) * scaleX;
+  player.x = Math.min(Math.max(touchX - player.width/2, 0), canvas.width - player.width);
   e.preventDefault();
-}, { passive:false });
+}, { passive: false });
 
 // 이름 입력 위치 고정
 function updateNameInputPosition() {
@@ -109,39 +110,33 @@ function updateNameInputPosition() {
 // ass 버튼 X 고정
 const assX = (canvas.width - 70)/2;
 
+const titleW=450, titleH=350;
+const titleX=(canvas.width-titleW)/2;
+const titleY=300;
+
 // 캔버스 클릭
 canvas.addEventListener("click", e=>{
   const rect = canvas.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
-  const x = clickX * scaleX;
-  const y = clickY * scaleY;
+  const clickX = (e.clientX - rect.left) * scaleX;
+  const clickY = (e.clientY - rect.top) * scaleY;
 
   if(gameState === "inputName" && !assClicked) {
     const assY = (canvas.height - 230)/2 + 149;
-    if(x >= assX && x <= assX + 70 && y >= assY && y <= assY + 50) {
+    if(clickX >= assX && clickX <= assX + 70 && clickY >= assY && clickY <= assY + 50) {
       if(nameInput.value.trim() !== "") {
         assClicked = true;
-        nameInput.style.display = "none"; // ASS 클릭 시 nameInput 숨김
+        nameInput.style.display = "none";
       }
     }
   } else if(gameState === "inputName" && assClicked) {
     const btnX = (canvas.width-509)/2;
     const btnY = titleY + 450;
-    if(x >= btnX && x <= btnX+509 && y >= btnY && y <= btnY+207){
+    if(clickX >= btnX && clickX <= btnX+509 && clickY >= btnY && clickY <= btnY+207){
       gameState = "playing";
-      score=0; lives=3; items=[];
-      lastSpawn=0; lastSpawnIntervalDecrease=0; fallSpeed=5.5;
+      score=0; lives=3; items=[]; lastSpawn=0; lastSpawnIntervalDecrease=0; fallSpeed=5.5;
     }
-  } else if(gameState === "end") {
-    const finalW=420, finalH=200;
-    const finalX=(canvas.width-finalW)/2;
-    const finalY=100;
-    ctx.drawImage(endBg,0,0,canvas.width,canvas.height);
-    ctx.drawImage(finalScoreImg,finalX,finalY,finalW,finalH);
-    drawTop();
   }
 });
 
@@ -206,10 +201,7 @@ function drawTop() {
   }
 }
 
-const titleW=450, titleH=350;
-const titleX=(canvas.width-titleW)/2;
-const titleY=300;
-
+// 게임 루프
 function gameLoop(timestamp){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -224,7 +216,7 @@ function gameLoop(timestamp){
       ctx.drawImage(assImg, assX, assY, 70,50);
       nameInput.style.display = "block";
     } else {
-      // ASS 클릭 이후 title + start 버튼만 보이게
+      // ass 클릭 후 title과 start 버튼 표시
       ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
       const btnX=(canvas.width-509)/2;
       const btnY=titleY + 450;
