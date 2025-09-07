@@ -108,7 +108,7 @@ canvas.addEventListener("touchmove", e=>{
 function updateNameInputPosition() {
   const nameW = 325.6, nameH = 69;
   const nameX = (canvasWidth - nameW)/2;
-  const nameY = (canvasHeight - nameH)/2 + 50;
+  const nameY = (canvasHeight - nameH)/2;
 
   nameInput.style.left = nameX + "px";
   nameInput.style.top = nameY + "px";
@@ -256,3 +256,4 @@ requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
+
