@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>Catch the Falling Wine</title>
 <style>
   body {
@@ -26,7 +26,6 @@
     background: transparent;
     color: white;
     display: none;
-    font-weight: bold;
   }
 </style>
 </head>
@@ -40,7 +39,7 @@ const ctx = canvas.getContext("2d");
 const nameInput = document.getElementById("nameInput");
 let newWidth, newHeight;
 
-// 화면 비율 조정 (모바일 기준)
+// 화면 비율 유지 (모바일 기준)
 function resizeCanvas() {
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -53,7 +52,6 @@ function resizeCanvas() {
   canvas.style.height = newHeight + "px";
   canvas.width = 720;
   canvas.height = 1280;
-
   updateNameInputPosition();
 }
 window.addEventListener("resize", resizeCanvas);
@@ -65,6 +63,7 @@ const startBtn = new Image(); startBtn.src = "image/start.png";
 const assImg = new Image(); assImg.src = "image/ass.png";
 const nameImg = new Image(); nameImg.src = "image/name.png";
 const titleImg = new Image(); titleImg.src = "image/title.png";
+
 const gameBg = new Image(); gameBg.src = "image/background_f.png";
 const endBg = new Image(); endBg.src = "image/end_f.png";
 const scoreImg = new Image(); scoreImg.src = "image/score.png";
@@ -72,6 +71,7 @@ const liveImg = new Image(); liveImg.src = "image/live.png";
 const noLiveImg = new Image(); noLiveImg.src = "image/noLive.png";
 const finalScoreImg = new Image(); finalScoreImg.src = "image/finalScore.png";
 const topImg = new Image(); topImg.src = "image/top.png";
+
 const playerImg = new Image(); playerImg.src = "image/player.png";
 const wineImg = new Image(); wineImg.src = "image/wine.png";
 
@@ -79,38 +79,41 @@ const wineImg = new Image(); wineImg.src = "image/wine.png";
 const player = { x: (720-141)/2, y: 1280-354, width:141, height:354, speed:7 };
 let items = [], score=0, lives=3, spawnInterval=4000, fallSpeed=5.5;
 let lastSpawn=0, lastSpawnIntervalDecrease=0;
-let gameState = "inputName"; // inputName -> assClicked -> playing -> end
+let gameState = "inputName"; // inputName -> playing -> end
 let assClicked = false;
-const keys = {};
-document.addEventListener("keydown", e=>keys[e.key]=true);
-document.addEventListener("keyup", e=>keys[e.key]=false);
 
-// 터치 이동
-canvas.addEventListener("touchmove", e=>{
+// 키보드 이벤트 (PC용)
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// 터치 이동 (모바일용)
+canvas.addEventListener("touchmove", e => {
   const rect = canvas.getBoundingClientRect();
   const touchX = e.touches[0].clientX - rect.left;
-  player.x = Math.min(Math.max(touchX - player.width/2,0), canvas.width - player.width);
+  player.x = Math.min(Math.max(touchX * (canvas.width/rect.width) - player.width/2, 0), canvas.width - player.width);
   e.preventDefault();
-}, { passive:false });
+}, { passive: false });
 
-// 이름 입력창 위치 (모바일 최적화)
+// 이름 입력창 위치
 function updateNameInputPosition() {
-  const nameX = (canvas.width - 325.6) / 2;
-  const nameY = (canvas.height - 69) / 2;
-  const scaleX = newWidth / canvas.width;
-  const scaleY = newHeight / canvas.height;
-  nameInput.style.left = (nameX * scaleX) + "px";
-  nameInput.style.top = (nameY * scaleY) + "px";
-  nameInput.style.width = (325.6 * scaleX) + "px";
-  nameInput.style.height = (69 * scaleY) + "px";
-  nameInput.style.fontSize = (32 * Math.min(scaleX, scaleY)) + "px";
+  const nameX = (canvas.width - 325.6)/2;
+  const nameY = (canvas.height - 69)/2;
+  nameInput.style.left = nameX * (newWidth/canvas.width) + "px";
+  nameInput.style.top = nameY * (newHeight/canvas.height) + "px";
+  nameInput.style.width = 325.6 * (newWidth/canvas.width) + "px";
+  nameInput.style.height = 69 * (newHeight/canvas.height) + "px";
+  nameInput.style.fontSize = 32 * (newHeight/canvas.height) + "px";
 }
 
 // ass 버튼 X 고정
 const assX = (canvas.width - 70)/2;
+const titleW = 450, titleH = 350;
+const titleX = (canvas.width - titleW)/2;
+const titleY = 300;
 
-// 캔버스 클릭 처리
-canvas.addEventListener("click", e=>{
+// 캔버스 클릭
+canvas.addEventListener("click", e => {
   const rect = canvas.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const clickY = e.clientY - rect.top;
@@ -132,15 +135,12 @@ canvas.addEventListener("click", e=>{
     const btnY = titleY + 450;
     if(x >= btnX && x <= btnX+509 && y >= btnY && y <= btnY+207){
       gameState = "playing";
-      score=0; lives=3; items=[];
-      lastSpawn=0; lastSpawnIntervalDecrease=0; fallSpeed=5.5;
+      score=0; lives=3; items=[]; lastSpawn=0; lastSpawnIntervalDecrease=0; fallSpeed=5.5;
     }
-  } else if(gameState === "end") {
-    drawTop();
   }
 });
 
-// 아이템
+// 아이템 생성
 function spawnItem() {
   const x = Math.random()*(canvas.width-48);
   items.push({ x, y:-114, width:48, height:114, speed:fallSpeed });
@@ -148,7 +148,8 @@ function spawnItem() {
 function drawPlayer() { ctx.drawImage(playerImg, player.x, player.y, player.width, player.height); }
 function updateAndDrawItems() {
   for(let i=items.length-1;i>=0;i--){
-    const item = items[i]; item.y += item.speed;
+    const item = items[i]; 
+    item.y += item.speed;
     ctx.drawImage(wineImg,item.x,item.y,item.width,item.height);
     const catchArea = {x:player.x, y:player.y, width:player.width, height:81};
     if(item.y+item.height>=catchArea.y && item.y<=catchArea.y+catchArea.height &&
@@ -160,7 +161,7 @@ function updateAndDrawItems() {
 }
 function updatePlayer() { 
   if(keys["ArrowLeft"] && player.x>0) player.x -= player.speed;
-  if(keys["ArrowRight"] && player.x<canvas.width-player.width) player.x += player.speed;
+  if(keys["ArrowRight"] && player.x<canvas.width-player.width) player.x += player.speed; 
 }
 function drawHUD() {
   ctx.drawImage(scoreImg,0,0,200,50);
@@ -169,7 +170,7 @@ function drawHUD() {
   for(let i=0;i<3;i++){ const img = i<lives ? liveImg:noLiveImg; ctx.drawImage(img,250+60*i,0,50,50); }
 }
 
-// localStorage
+// localStorage 저장
 function saveScore(name, score){
   if(!name) return;
   let playersList = JSON.parse(localStorage.getItem("playersList")) || [];
@@ -177,16 +178,16 @@ function saveScore(name, score){
   localStorage.setItem("playersList", JSON.stringify(playersList));
 }
 
-// top
+// top 이미지 안 점수 표시
 function drawTop() {
   const topW = 500, topH = 700;
   const topX = (canvas.width - topW) / 2;
-  const topY = 320;
+  const finalY = 100, finalH = 200;
+  const topY = finalY + finalH + 20;
   ctx.drawImage(topImg, topX, topY, topW, topH);
 
   let playersList = JSON.parse(localStorage.getItem("playersList")) || [];
   playersList.sort((a,b) => b.score - a.score);
-
   ctx.fillStyle = "white";
   ctx.font = "36px Arial";
   ctx.textAlign = "center";
@@ -196,15 +197,11 @@ function drawTop() {
   for(let i=0;i<maxRank;i++){
     const player = playersList[i];
     const rankY = topY + 120 + i*60;
-    const text = `${i+1}. ${player.name} - ${player.score}`;
-    ctx.fillText(text, topX + topW/2, rankY);
+    ctx.fillText(`${i+1}. ${player.name} - ${player.score}`, topX + topW/2, rankY);
   }
 }
 
-const titleW=450, titleH=350;
-const titleX=(canvas.width-titleW)/2;
-const titleY=300;
-
+// 게임 루프
 function gameLoop(timestamp){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -219,7 +216,6 @@ function gameLoop(timestamp){
       ctx.drawImage(assImg, assX, assY, 70,50);
       nameInput.style.display = "block";
     } else {
-      // ASS 클릭 후 title, start 표시
       ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
       const btnX=(canvas.width-509)/2;
       const btnY=titleY + 450;
@@ -229,11 +225,17 @@ function gameLoop(timestamp){
   } else if(gameState==="playing") {
     ctx.drawImage(gameBg,0,0,canvas.width,canvas.height);
     updatePlayer(); drawPlayer(); updateAndDrawItems(); drawHUD();
+
     if(!lastSpawn) lastSpawn=timestamp;
     if(!lastSpawnIntervalDecrease) lastSpawnIntervalDecrease=timestamp;
-    if(timestamp-lastSpawnIntervalDecrease>=3000){ spawnInterval=Math.max(1000,spawnInterval-1300); lastSpawnIntervalDecrease=timestamp; }
+
+    if(timestamp-lastSpawnIntervalDecrease>=3000){
+      spawnInterval=Math.max(1000,spawnInterval-1300);
+      lastSpawnIntervalDecrease=timestamp;
+    }
     if(timestamp-lastSpawn>spawnInterval){ spawnItem(); lastSpawn=timestamp; }
-    fallSpeed += 0.00026;
+
+    fallSpeed += 0.00026; // 게임 루프에서만 증가
 
   } else if(gameState==="end") {
     ctx.drawImage(endBg,0,0,canvas.width,canvas.height);
