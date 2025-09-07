@@ -96,16 +96,14 @@ canvas.addEventListener("touchmove", e=>{
 
 // 이름 입력 위치 고정 (캔버스 중앙 기준 + 화면 스케일 적용)
 function updateNameInputPosition() {
-  const nameWidth = 325.6;
-  const nameHeight = 69;
-  const nameX = 197.2;
-  const nameY = 569.5;
+  const nameX = (canvas.height - 400)/2 + 100;
+  const nameY = (canvas.height - 230)/2 + 54;
   const scaleX = newWidth / canvas.width;
   const scaleY = newHeight / canvas.height;
   nameInput.style.left = (nameX * scaleX) + "px";
   nameInput.style.top = (nameY * scaleY) + "px";
-  nameInput.style.width = (nameWidth * scaleX) + "px";
-  nameInput.style.height = (nameHeight * scaleY) + "px";
+  nameInput.style.width = (325.6 * scaleX) + "px";
+  nameInput.style.height = (69 * scaleY) + "px";
   nameInput.style.fontSize = (32 * scaleY) + "px";
 }
 
@@ -261,4 +259,5 @@ requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
+
 
