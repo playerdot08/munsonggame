@@ -94,10 +94,10 @@ canvas.addEventListener("touchmove", e=>{
   e.preventDefault();
 }, { passive:false });
 
-// 이름 입력 위치 고정 (캔버스 중앙 기준 + 화면 스케일 적용)
+// 이름 입력 위치 고정
 function updateNameInputPosition() {
-  const nameX = 197.2;
-  const nameY = (canvas.height - 230)/2 + 54;
+  const nameX = (canvas.width - 325.6) / 2;
+  const nameY = (canvas.height - 69) / 2;
   const scaleX = newWidth / canvas.width;
   const scaleY = newHeight / canvas.height;
   nameInput.style.left = (nameX * scaleX) + "px";
@@ -225,7 +225,7 @@ function gameLoop(timestamp){
       ctx.drawImage(assImg, assX, assY, 70,50);
       nameInput.style.display = "block";
     } else {
-      // ASS 클릭 후에만 title, start 버튼 표시
+      // ASS 클릭 후에만 타이틀과 Start 버튼 표시
       ctx.drawImage(titleImg,titleX,titleY,titleW,titleH);
       const btnX=(canvas.width-509)/2;
       const btnY=titleY + 450;
@@ -259,6 +259,3 @@ requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
-
-
-
