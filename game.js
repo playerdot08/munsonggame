@@ -36,21 +36,21 @@ for (const [name, src] of Object.entries(paths)) {
   image.src = src;
   images[name] = image;
 }
-
 const ready = name => images[name]?.complete && images[name].naturalWidth > 0;
 
-const envelopeRect = { x: 45, y: 235, w: 310, h: 242 };
-const letterRect = { x: 30, y: 82, w: 340, h: 430 };
-const startRect = { x: 130, y: 570, w: 140, h: 78 };
-const finalScoreRect = { x: 45, y: 195, w: 310, h: 145 };
-const restartRect = { x: 130, y: 385, w: 140, h: 78 };
+// 720×1280 전용 UI 배치
+const envelopeRect = { x: 120, y: 390, w: 480, h: 375 };
+const letterRect = { x: 60, y: 115, w: 600, h: 680 };
+const startRect = { x: 245, y: 940, w: 230, h: 128 };
+const finalScoreRect = { x: 115, y: 365, w: 490, h: 228 };
+const restartRect = { x: 235, y: 700, w: 250, h: 139 };
 
 const player = {
-  x: 125,
-  y: 750 - 218,
-  w: 150,
-  h: 218,
-  speed: 7
+  x: 235,
+  y: 1280 - 365,
+  w: 250,
+  h: 365,
+  speed: 12.5
 };
 
 let wines = [];
@@ -68,11 +68,7 @@ const COUNTDOWN_DURATION = 3000;
 function drawCover(image, x, y, w, h) {
   const imageRatio = image.naturalWidth / image.naturalHeight;
   const boxRatio = w / h;
-  let sx = 0;
-  let sy = 0;
-  let sw = image.naturalWidth;
-  let sh = image.naturalHeight;
-
+  let sx = 0, sy = 0, sw = image.naturalWidth, sh = image.naturalHeight;
   if (imageRatio > boxRatio) {
     sw = image.naturalHeight * boxRatio;
     sx = (image.naturalWidth - sw) / 2;
@@ -92,11 +88,9 @@ function drawBackground(name) {
 }
 
 function drawImage(name, rect) {
-  if (ready(name)) {
-    ctx.drawImage(images[name], rect.x, rect.y, rect.w, rect.h);
-    return true;
-  }
-  return false;
+  if (!ready(name)) return false;
+  ctx.drawImage(images[name], rect.x, rect.y, rect.w, rect.h);
+  return true;
 }
 
 function resetGame() {
@@ -125,82 +119,58 @@ function currentBatchSize() {
   if (elapsed < 15000) return 1;
   if (elapsed < 30000) return Math.random() < 0.6 ? 2 : 1;
   if (elapsed < 50000) return 2 + (Math.random() < 0.45 ? 1 : 0);
-  return 2 + Math.floor(Math.random() * 3); // 2~4개
+  return 2 + Math.floor(Math.random() * 3);
 }
 
 function findSeparatedWineX(wineW, newWines) {
-  const minCenterDistance = 72;
-
-  // 화면 위쪽에 있는 기존 와인과 이번에 생성하는 와인을 모두 비교합니다.
-  const nearbyWines = wines
-    .filter(wine => wine.y < 210)
-    .concat(newWines);
-
-  let bestX = Math.random() * (W - wineW);
+  const minCenterDistance = 130;
+  const sideMargin = 18;
+  const nearbyWines = wines.filter(wine => wine.y < 360).concat(newWines);
+  let bestX = sideMargin + Math.random() * (W - wineW - sideMargin * 2);
   let bestDistance = -1;
 
-  // 무작위 위치를 여러 번 뽑아 충분히 떨어진 위치를 우선 선택합니다.
-  for (let attempt = 0; attempt < 35; attempt++) {
-    const candidateX = Math.random() * (W - wineW);
+  for (let attempt = 0; attempt < 45; attempt++) {
+    const candidateX = sideMargin + Math.random() * (W - wineW - sideMargin * 2);
     const candidateCenter = candidateX + wineW / 2;
-
     let nearestDistance = Infinity;
     for (const other of nearbyWines) {
       const otherCenter = other.x + other.w / 2;
       nearestDistance = Math.min(nearestDistance, Math.abs(candidateCenter - otherCenter));
     }
-
-    if (nearbyWines.length === 0 || nearestDistance >= minCenterDistance) {
-      return candidateX;
-    }
-
+    if (nearbyWines.length === 0 || nearestDistance >= minCenterDistance) return candidateX;
     if (nearestDistance > bestDistance) {
       bestDistance = nearestDistance;
       bestX = candidateX;
     }
   }
-
-  // 자리가 부족한 경우에도 가장 멀리 떨어진 후보를 사용합니다.
   return bestX;
 }
 
 function spawnBatch() {
   const count = currentBatchSize();
-  const wineW = 30;
-  const wineH = 66;
-  const baseSpeed = 2.65 + Math.min(3.5, elapsed / 22000);
+  const wineW = 54;
+  const wineH = 119;
+  const baseSpeed = 4.75 + Math.min(6.2, elapsed / 22000);
   const newWines = [];
 
   for (let i = 0; i < count; i++) {
     const wine = {
       x: findSeparatedWineX(wineW, newWines),
-      // 같은 순간에 생성되어도 세로 위치가 완전히 일렬로 겹치지 않게 합니다.
-      y: -wineH - Math.random() * 95,
+      y: -wineH - Math.random() * 150,
       w: wineW,
       h: wineH,
-      speed: baseSpeed + Math.random() * 0.45
+      speed: baseSpeed + Math.random() * 0.8
     };
-
     newWines.push(wine);
   }
-
   wines.push(...newWines);
-}
-
-function overlaps(a, b) {
-  return (
-    a.x < b.x + b.w &&
-    a.x + a.w > b.x &&
-    a.y < b.y + b.h &&
-    a.y + a.h > b.y
-  );
 }
 
 function updateGame(dt) {
   elapsed += dt;
   spawnTimer += dt;
 
-  const spawnInterval = Math.max(650, 1450 - elapsed / 55);
+  const spawnInterval = Math.max(700, 1700 - elapsed / 52);
   if (spawnTimer >= spawnInterval) {
     spawnTimer %= spawnInterval;
     spawnBatch();
@@ -211,11 +181,10 @@ function updateGame(dt) {
   if (rightPressed) player.x += moveDistance;
   player.x = Math.max(0, Math.min(W - player.w, player.x));
 
-  // 와인은 플레이어 옆이나 몸이 아니라 머리 위 상자의 윗면으로
-  // 위에서 아래로 떨어질 때만 잡힌 것으로 처리합니다.
-  const catchLineY = player.y + 10;
-  const catchLeft = player.x + 20;
-  const catchRight = player.x + player.w - 20;
+  // 상자 윗면에 위에서 닿을 때만 획득 처리
+  const catchLineY = player.y + 18;
+  const catchLeft = player.x + 34;
+  const catchRight = player.x + player.w - 34;
 
   for (let i = wines.length - 1; i >= 0; i--) {
     const wine = wines[i];
@@ -223,12 +192,8 @@ function updateGame(dt) {
     wine.y += wine.speed * (dt / 16.67);
     const currentBottom = wine.y + wine.h;
 
-    const wineLeft = wine.x;
-    const wineRight = wine.x + wine.w;
-    const horizontallyOnCrate =
-      wineRight > catchLeft && wineLeft < catchRight;
-    const crossedCrateTop =
-      previousBottom <= catchLineY && currentBottom >= catchLineY;
+    const horizontallyOnCrate = wine.x + wine.w > catchLeft && wine.x < catchRight;
+    const crossedCrateTop = previousBottom <= catchLineY && currentBottom >= catchLineY;
 
     if (horizontallyOnCrate && crossedCrateTop) {
       wines.splice(i, 1);
@@ -251,25 +216,23 @@ function updateGame(dt) {
 function drawHUD() {
   ctx.save();
   ctx.fillStyle = 'rgba(31, 24, 18, .72)';
-  ctx.fillRect(0, 0, W, 50);
+  ctx.fillRect(0, 0, W, 86);
 
   ctx.fillStyle = '#fff7e1';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 25px Georgia, serif';
-  ctx.fillText(String(score), 24, 25);
+  ctx.font = 'bold 44px Georgia, serif';
+  ctx.fillText(String(score), 42, 43);
 
   for (let i = 0; i < 3; i++) {
-    const rect = { x: 270 + i * 39, y: 7, w: 35, h: 35 };
+    const rect = { x: 490 + i * 70, y: 12, w: 58, h: 58 };
     drawImage(i < lives ? 'life' : 'noLife', rect);
   }
   ctx.restore();
 }
 
-
 function updateCountdown(dt) {
   countdownElapsed += dt;
-
   if (countdownElapsed >= COUNTDOWN_DURATION) {
     state = State.PLAY;
     elapsed = 0;
@@ -281,18 +244,16 @@ function drawCountdownScreen() {
   drawBackground('playBg');
   drawImage('player', player);
   drawHUD();
-
   const remaining = Math.max(1, 3 - Math.floor(countdownElapsed / 1000));
 
   ctx.save();
   ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
   ctx.fillRect(0, 0, W, H);
-
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 118px Georgia, serif';
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = 'rgba(50, 30, 15, 0.8)';
+  ctx.font = 'bold 190px Georgia, serif';
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = 'rgba(50, 30, 15, 0.82)';
   ctx.fillStyle = '#fff3c4';
   ctx.strokeText(String(remaining), W / 2, H / 2);
   ctx.fillText(String(remaining), W / 2, H / 2);
@@ -301,7 +262,6 @@ function drawCountdownScreen() {
 
 function drawPlayScreen() {
   drawBackground('playBg');
-
   for (const wine of wines) drawImage('wine', wine);
   drawImage('player', player);
   drawHUD();
@@ -309,16 +269,15 @@ function drawPlayScreen() {
 
 function drawEndScreen() {
   drawBackground('endBg');
-
   drawImage('finalScore', finalScoreRect);
 
   ctx.save();
   ctx.fillStyle = '#604226';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 42px Georgia, serif';
-  // 점수가 리본 아래로 내려가지 않도록 점수판 안쪽 중앙에 배치
-  ctx.fillText(String(score), W / 2, 267);
+  ctx.font = 'bold 66px Georgia, serif';
+  // 숫자를 점수판 중앙의 흰색 영역 안에 배치
+  ctx.fillText(String(score), W / 2, finalScoreRect.y + 123);
   ctx.restore();
 
   drawImage('restartButton', restartRect);
@@ -344,14 +303,10 @@ function movePlayerTo(pointerX) {
 canvas.addEventListener('pointerdown', event => {
   event.preventDefault();
   const point = pointFromEvent(event);
-
-  if (state === State.ENVELOPE && inside(point, envelopeRect)) {
-    state = State.LETTER;
-  } else if (state === State.LETTER && inside(point, startRect)) {
-    resetGame();
-  } else if (state === State.END && inside(point, restartRect)) {
-    resetGame();
-  } else if (state === State.PLAY) {
+  if (state === State.ENVELOPE && inside(point, envelopeRect)) state = State.LETTER;
+  else if (state === State.LETTER && inside(point, startRect)) resetGame();
+  else if (state === State.END && inside(point, restartRect)) resetGame();
+  else if (state === State.PLAY) {
     dragging = true;
     movePlayerTo(point.x);
     canvas.setPointerCapture?.(event.pointerId);
@@ -369,16 +324,9 @@ canvas.addEventListener('pointerup', stopDragging);
 canvas.addEventListener('pointercancel', stopDragging);
 
 window.addEventListener('keydown', event => {
-  if (event.key === 'ArrowLeft') {
-    leftPressed = true;
-    event.preventDefault();
-  }
-  if (event.key === 'ArrowRight') {
-    rightPressed = true;
-    event.preventDefault();
-  }
+  if (event.key === 'ArrowLeft') { leftPressed = true; event.preventDefault(); }
+  if (event.key === 'ArrowRight') { rightPressed = true; event.preventDefault(); }
 });
-
 window.addEventListener('keyup', event => {
   if (event.key === 'ArrowLeft') leftPressed = false;
   if (event.key === 'ArrowRight') rightPressed = false;
