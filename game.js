@@ -211,19 +211,26 @@ function updateGame(dt) {
   if (rightPressed) player.x += moveDistance;
   player.x = Math.max(0, Math.min(W - player.w, player.x));
 
-  // 투명 여백을 줄이되, 플레이어 이미지 대부분을 충돌 범위로 사용합니다.
-  const playerHitbox = {
-    x: player.x + 18,
-    y: player.y + 8,
-    w: player.w - 36,
-    h: player.h - 14
-  };
+  // 와인은 플레이어 옆이나 몸이 아니라 머리 위 상자의 윗면으로
+  // 위에서 아래로 떨어질 때만 잡힌 것으로 처리합니다.
+  const catchLineY = player.y + 10;
+  const catchLeft = player.x + 20;
+  const catchRight = player.x + player.w - 20;
 
   for (let i = wines.length - 1; i >= 0; i--) {
     const wine = wines[i];
+    const previousBottom = wine.y + wine.h;
     wine.y += wine.speed * (dt / 16.67);
+    const currentBottom = wine.y + wine.h;
 
-    if (overlaps(wine, playerHitbox)) {
+    const wineLeft = wine.x;
+    const wineRight = wine.x + wine.w;
+    const horizontallyOnCrate =
+      wineRight > catchLeft && wineLeft < catchRight;
+    const crossedCrateTop =
+      previousBottom <= catchLineY && currentBottom >= catchLineY;
+
+    if (horizontallyOnCrate && crossedCrateTop) {
       wines.splice(i, 1);
       score += 1;
       continue;
