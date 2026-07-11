@@ -1,0 +1,26 @@
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #251d18;
+  touch-action: none;
+}
+body {
+  display: grid;
+  place-items: center;
+}
+.game-wrap {
+  width: min(100vw, calc(100vh * 400 / 750));
+  height: min(100vh, calc(100vw * 750 / 400));
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #bd9f82;
+  box-shadow: 0 0 30px rgba(0, 0, 0, .55);
+  user-select: none;
+  -webkit-user-select: none;
+}
